@@ -7,7 +7,7 @@ typedef struct resistor Resistor;
 
 struct resistor
 {
-    int value;
+    float value;
     float power;
     int amount;
     Resistor* nextR;
@@ -31,12 +31,12 @@ struct header
     Serie *lastS; //ponteiro apontando para o fim da lista
 };
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Resistor* createResistor (Header* hd, int val, float pow, int amt);
-Serie* createSerieAndResistor (Header* hd,int ser, int val, float pow, int amt);
+Resistor* createResistor (Header* hd, float val, float pow, int amt);
+Serie* createSerieAndResistor (Header* hd, int ser, float val, float pow, int amt);
 Header* createHeader ();
 int loadFile(Header* hd);
 int saveFile(Header* hd);
-Header* addResistor (Header* hd,int ser, int val, float pow, int amt);
+Header* addResistor (Header* hd, int ser, float val, float pow, int amt);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(void)
@@ -45,15 +45,15 @@ int main(void)
     loadFile(h);
     printf("tamanho do cabecalho: %d\n", h->sizeH);
     printf("primeira serie: %d\n", h->firstS->serie); // problema com ponteiro de serie
-    printf("primeiro res: %d\n", h->firstS->firstR->value);
-    printf("ultimo res: %d\n", h->lastS->lastR->value);
-    printf("primeiro res ultima serie: %d\n", h->lastS->firstR->value);
+    printf("primeiro res: %f\n", h->firstS->firstR->value);
+    printf("ultimo res: %f\n", h->lastS->lastR->value);
+    printf("primeiro res ultima serie: %f\n", h->lastS->firstR->value);
     saveFile(h);
 
     return 0;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Resistor* createResistor (Header* hd, int val, float pow, int amt)
+Resistor* createResistor (Header* hd, float val, float pow, int amt)
 {
     Resistor* r = (Resistor*) malloc(sizeof(Resistor));
     if (r == NULL) exit(EXIT_FAILURE);
@@ -130,7 +130,7 @@ Resistor* createResistor (Header* hd, int val, float pow, int amt)
     return r;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Serie* createSerieAndResistor (Header* hd, int ser, int val, float pow, int amt)
+Serie* createSerieAndResistor (Header* hd, int ser, float val, float pow, int amt)
 {
     Serie* s = (Serie*) malloc(sizeof(Serie));
     if (s == NULL) exit(EXIT_FAILURE);
@@ -237,7 +237,7 @@ int loadFile(Header* hd)
 
     do
     {
-        n = fscanf(fp, "%d %d %f %d\n", &(auxS->serie), &(auxR->value), &(auxR->power), &(auxR->amount));
+        n = fscanf(fp, "%d %f %f %d\n", &(auxS->serie), &(auxR->value), &(auxR->power), &(auxR->amount));
         if (n == EOF) break;
         addResistor(hd, auxS->serie, auxR->value, auxR->power, auxR->amount);
         while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
@@ -292,7 +292,7 @@ int saveFile(Header* hd)
     {
         while (hd->firstS->sizeS > 0)
         {
-            fprintf(fp, "%d %d %.3f %d\n", hd->firstS->serie, hd->firstS->firstR->value, hd->firstS->firstR->power, hd->firstS->firstR->amount);
+            fprintf(fp, "%d %.2f %.3f %d\n", hd->firstS->serie, hd->firstS->firstR->value, hd->firstS->firstR->power, hd->firstS->firstR->amount);
             if (hd->firstS->sizeS > 1)
             {
                 hd->firstS->firstR = hd->firstS->firstR->nextR; // vai para o próximo
@@ -321,7 +321,7 @@ int saveFile(Header* hd)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Header* addResistor (Header* hd, int ser, int val, float pow, int amt)
+Header* addResistor (Header* hd, int ser, float val, float pow, int amt)
 {
     //Resistor* auxR;
     int serieAndResistorCreated = 0; // flag
