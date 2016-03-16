@@ -49,6 +49,9 @@ int main(void)
     removeResistor(h, 23, 1000, 0.25);
     removeResistor(h, 24, 1000, 0.3);
     removeResistor(h, 24, 1000, 0.25);
+    searchResistor(h, 12, 68000, 0.5); // tem que retornar 2
+    searchResistor(h, 11, 68000, 0.5); // nao
+    searchResistor(h, 12, 68300, 0.5); // nao
     saveFile(h);
 
     return 0;
@@ -508,6 +511,60 @@ Header* removeResistor (Header* hd, int ser, float val, float pow)
             free (hd->firstS);
             //free(hd);
         }
+    }
+    return hd;
+}
+
+Header* searchResistor (Header* hd, int ser, float val, float pow)
+{
+    while (hd->firstS->serie != ser) // enquanto a série for diferente
+    {
+        if (hd->firstS->nextS == NULL) // se o proximo é nulo, não tem mais pra consultar
+        {
+            printf("\nResistor inexistente.\n");
+            while (hd->firstS->prevS != NULL)
+            {
+                hd->firstS = hd->firstS->prevS;
+            }
+            return hd;
+        }
+        else
+        {
+            hd->firstS = hd->firstS->nextS; // anda uma série
+        }
+    }
+    // se chegar aqui, achou a série
+
+    while (hd->firstS->firstR->value != val || hd->firstS->firstR->power != pow) // achou a serie, mas valor e potencia não batem
+    {
+        if (hd->firstS->firstR->nextR == NULL) // se o proximo é nulo, não tem mais o que consultar
+        {
+            printf("\nResistor não encontrado.\n");
+            while (hd->firstS->firstR->prevR != NULL)
+            {
+                hd->firstS->firstR = hd->firstS->firstR->prevR;
+            }
+            while (hd->firstS->prevS != NULL)
+            {
+                hd->firstS = hd->firstS->prevS;
+            }
+            return hd;
+        }
+        else
+        {
+            hd->firstS->firstR = hd->firstS->firstR->nextR;
+        }
+    }
+
+    // se chegou aqui, encontrou
+    printf("\nExiste(m) %d do resistor procurado.\n", hd->firstS->firstR->amount);
+    while (hd->firstS->firstR->prevR != NULL)
+    {
+        hd->firstS->firstR = hd->firstS->firstR->prevR;
+    }
+    while (hd->firstS->prevS != NULL)
+    {
+        hd->firstS = hd->firstS->prevS;
     }
     return hd;
 }
