@@ -127,43 +127,44 @@ int graphic_init()
     /**< Inicializa a tela em branco */
     al_clear_to_color(al_map_rgb(255, 255, 255));
 
-    /**< While virificando se não foi clicado em sair */
-    while (!sair)
+    /**< Carrega tela inicial */
+    TELA_INICIAL = al_load_bitmap("screens/inicial.png");
+    if(!TELA_INICIAL)
     {
-        /**< Carrega tela inicial */
-        TELA_INICIAL = al_load_bitmap("screens/inicial.png");
-        if(!TELA_INICIAL)
-        {
-            al_show_native_message_box(janela, "Error", "Error", "Failed to load inicial.png!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
-            al_destroy_display(janela);
-            return -1;
-        }
+        al_show_native_message_box(janela, "Error", "Error", "Failed to load inicial.png!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
+        al_destroy_display(janela);
+        return -1;
+    }
 
-        TELA_ADD = al_load_bitmap("screens/add.png");
-        if(!TELA_ADD)
-        {
-            al_show_native_message_box(janela, "Error", "Error", "Failed to load add.png!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
-            al_destroy_display(janela);
-            return -1;
-        }
+    TELA_ADD = al_load_bitmap("screens/add.png");
+    if(!TELA_ADD)
+    {
+        al_show_native_message_box(janela, "Error", "Error", "Failed to load add.png!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
+        al_destroy_display(janela);
+        return -1;
+    }
 
-        TELA_REMOVE = al_load_bitmap("screens/remove.png");
-        if(!TELA_REMOVE)
-        {
-            al_show_native_message_box(janela, "Error", "Error", "Failed to load remove.png!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
-            al_destroy_display(janela);
-            return -1;
-        }
+    TELA_REMOVE = al_load_bitmap("screens/remove.png");
+    if(!TELA_REMOVE)
+    {
+        al_show_native_message_box(janela, "Error", "Error", "Failed to load remove.png!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
+        al_destroy_display(janela);
+        return -1;
+    }
 
-        TELA_SEARCH = al_load_bitmap("screens/search.png");
-        if(!TELA_SEARCH)
-        {
-            al_show_native_message_box(janela, "Error", "Error", "Failed to load search.png!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
-            al_destroy_display(janela);
-            return -1;
-        }
+    TELA_SEARCH = al_load_bitmap("screens/search.png");
+    if(!TELA_SEARCH)
+    {
+        al_show_native_message_box(janela, "Error", "Error", "Failed to load search.png!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
+        al_destroy_display(janela);
+        return -1;
+    }
 
-
+    /**< While virificando se não foi clicado em sair */
+    while (sair == 0)
+    {
+        /**< Inicializa a tela em branco */
+        al_clear_to_color(al_map_rgb(255, 255, 255));        /**< Printa tela inicial */
         /**< Printa tela inicial */
         al_draw_bitmap(TELA_INICIAL, tela_inicial_x0, tela_inicial_y0, 0);
 
@@ -181,10 +182,10 @@ int graphic_init()
             {
 
                 /**< Se clicado no botao SAIR */
-                if(evento.mouse.x >= 1302  && evento.mouse.x <= LARGURA_TELA && evento.mouse.y >= ALTURA_TELA && evento.mouse.y <= 50)
+                if(evento.mouse.x >= 1302  && evento.mouse.x <= LARGURA_TELA && evento.mouse.y >= 0 && evento.mouse.y <= 50)
                 {
-                    saveFile(h);
                     sair = 1;
+                    break;
                 }
 
                 /**< Se clicado no botao ADD */
@@ -198,10 +199,8 @@ int graphic_init()
                     /**< Atualiza a tela */
                     al_flip_display();
                     addResistor(h);
-                    /**< Inicializa a tela em branco */
-                    al_clear_to_color(al_map_rgb(255, 255, 255));        /**< Printa tela inicial */
-                    /**< Atualiza a tela */
-                    al_flip_display();
+                    saveFile(h);
+                    break;
                 }
 
                 /**< Se clicado no botao REMOVE */
@@ -215,10 +214,8 @@ int graphic_init()
                     /**< Atualiza a tela */
                     al_flip_display();
                     removeResistor(h);
-                    /**< Inicializa a tela em branco */
-                    al_clear_to_color(al_map_rgb(255, 255, 255));        /**< Printa tela inicial */
-                    /**< Atualiza a tela */
-                    al_flip_display();
+                    saveFile(h);
+                    break;
                 }
 
                 /**< Se clicado no botao SEARCH */
@@ -232,10 +229,7 @@ int graphic_init()
                     /**< Atualiza a tela */
                     al_flip_display();
                     searchResistor(h);
-                    /**< Inicializa a tela em branco */
-                    al_clear_to_color(al_map_rgb(255, 255, 255));        /**< Printa tela inicial */
-                    /**< Atualiza a tela */
-                    al_flip_display();
+                    break;
                 }
             }
         }
@@ -418,7 +412,7 @@ int loadFile(Header* hd)
 {
     int n;
     FILE *fp;
-    fp = fopen ("lista_de_resistores_desorganizada.txt", "r");
+    fp = fopen ("lista_de_resistores.txt", "r");
     if (fp == NULL)
     {
         printf ("Erro ao abrir o arquivo.\n");
@@ -489,7 +483,7 @@ Header* addResistor (Header* hd)
     float val;
     float pow;
     int amt;
-    printf("\nSerie: ");
+    printf("Serie: ");
     scanf("%d", &ser);
     printf("\nValor: ");
     scanf("%f", &val);
@@ -497,6 +491,7 @@ Header* addResistor (Header* hd)
     scanf("%f", &pow);
     printf("\nQuantidade: ");
     scanf("%d", &amt);
+    system("cls");
     int serieAndResistorCreated = 0; // flag
     int resistorCreated = 0; // flag
 
@@ -680,12 +675,13 @@ Header* removeResistor (Header* hd)
     int ser;
     float val;
     float pow;
-    printf("\nSerie: ");
+    printf("Serie: ");
     scanf("%d", &ser);
     printf("\nValor: ");
     scanf("%f", &val);
     printf("\nPotencia: ");
     scanf("%f", &pow);
+    system("cls");
 
     while (hd->firstS->serie != ser) // enquanto a série for diferente
     {
@@ -794,9 +790,9 @@ Header* removeResistor (Header* hd)
                 {
                     hd->firstS = hd->firstS->prevS;
                 }
-                hd->firstS = hd->firstS->prevS;
-                free(hd->firstS->nextS);
-                hd->firstS->nextS = NULL;
+                hd->lastS = hd->lastS->prevS;
+                free(hd->lastS->nextS);
+                hd->lastS->nextS = NULL;
                 hd->sizeH--;
                 return hd;
             }
@@ -820,12 +816,13 @@ Header* searchResistor (Header* hd)
     int ser;
     float val;
     float pow;
-    printf("\nSerie: ");
+    printf("Serie: ");
     scanf("%d", &ser);
     printf("\nValor: ");
     scanf("%f", &val);
     printf("\nPotencia: ");
     scanf("%f", &pow);
+    system("cls");
 
     while (hd->firstS->serie != ser) // enquanto a série for diferente
     {
