@@ -48,7 +48,7 @@ int main(void)
     printf("primeiro res: %d\n", h->firstS->firstR->value);
     printf("ultimo res: %d\n", h->lastS->lastR->value);
     printf("primeiro res ultima serie: %d\n", h->lastS->firstR->value);
-    //saveFile(h);
+    saveFile(h);
 
     return 0;
 }
@@ -102,9 +102,9 @@ Resistor* createResistor (Header* hd, int val, float pow, int amt)
             hd->firstS->firstR->prevR = r;
             hd->firstS->firstR = r;
             while (hd->firstS->firstR->prevR != NULL)
-                {
-                    hd->firstS->firstR = hd->firstS->firstR->prevR; // coloca o ponteiro hd->firstS->firstR no começo
-                }
+            {
+                hd->firstS->firstR = hd->firstS->firstR->prevR; // coloca o ponteiro hd->firstS->firstR no começo
+            }
             resistorCreated = 1;
         }
         //if (resistorCreated == 1) break; // sai do else se já criou resistor
@@ -182,9 +182,9 @@ Serie* createSerieAndResistor (Header* hd, int ser, int val, float pow, int amt)
             hd->firstS = s;
             createResistor(hd, val, pow, amt);
             while (hd->firstS->prevS != NULL)
-                {
-                    hd->firstS = hd->firstS->prevS; // coloca o ponteiro hd->firstS no começo
-                }
+            {
+                hd->firstS = hd->firstS->prevS; // coloca o ponteiro hd->firstS no começo
+            }
             serieCreated = 1;
         }
         //if (resistorCreated == 1) break; // sai do else se já criou resistor
@@ -240,13 +240,37 @@ int loadFile(Header* hd)
         n = fscanf(fp, "%d %d %f %d\n", &(auxS->serie), &(auxR->value), &(auxR->power), &(auxR->amount));
         if (n == EOF) break;
         addResistor(hd, auxS->serie, auxR->value, auxR->power, auxR->amount);
-        while (hd->firstS->prevS != NULL)
+        while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
         {
-            while (hd->firstS->firstR->prevR != NULL)
+            hd->firstS->firstR = hd->firstS->firstR->prevR;
+        }
+        while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
+        {
+            hd->firstS->lastR = hd->firstS->lastR->nextR;
+        }
+        while (hd->firstS->prevS != NULL) // faz ponteiro ir para inicio
+        {
+            while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
             {
                 hd->firstS->firstR = hd->firstS->firstR->prevR;
             }
+            while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
+            {
+                hd->firstS->lastR = hd->firstS->lastR->nextR;
+            }
             hd->firstS = hd->firstS->prevS;
+        }
+        while (hd->lastS->nextS != NULL) // faz ponteiro ir para final
+        {
+            while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
+            {
+                hd->firstS->firstR = hd->firstS->firstR->prevR;
+            }
+            while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
+            {
+                hd->firstS->lastR = hd->firstS->lastR->nextR;
+            }
+            hd->lastS = hd->lastS->nextS;
         }
     }
     while(n != EOF);
@@ -264,34 +288,34 @@ int saveFile(Header* hd)
         return 0;
     }
 
-        while (hd->sizeH > 0)
+    while (hd->sizeH > 0)
+    {
+        while (hd->firstS->sizeS > 0)
         {
-            while (hd->firstS->sizeS > 0)
+            fprintf(fp, "%d %d %.3f %d\n", hd->firstS->serie, hd->firstS->firstR->value, hd->firstS->firstR->power, hd->firstS->firstR->amount);
+            if (hd->firstS->sizeS > 1)
             {
-                fprintf(fp, "%d %d %f %d\n", hd->firstS->serie, hd->firstS->firstR->value, hd->firstS->firstR->power, hd->firstS->firstR->amount);
-                if (hd->firstS->sizeS > 1)
-                {
-                    hd->firstS->firstR = hd->firstS->firstR->nextR; // vai para o próximo
-                    free(hd->firstS->firstR->prevR); // libera o que foi impresso
-                }
-                else
-                {
-                    free(hd->firstS->firstR);
-                }
-                hd->firstS->sizeS--; // decrementa tamanho da serie
-            }
-            // chegou aqui apagou uma série e todos seus resistores
-            if (hd->sizeH > 1)
-            {
-                hd->firstS = hd->firstS->nextS;
-                free(hd->firstS->prevS);
+                hd->firstS->firstR = hd->firstS->firstR->nextR; // vai para o próximo
+                free(hd->firstS->firstR->prevR); // libera o que foi impresso
             }
             else
             {
-                free(hd->firstS);
+                free(hd->firstS->firstR);
             }
-            hd->sizeH--;
+            hd->firstS->sizeS--; // decrementa tamanho da serie
         }
+        // chegou aqui apagou uma série e todos seus resistores
+        if (hd->sizeH > 1)
+        {
+            hd->firstS = hd->firstS->nextS;
+            free(hd->firstS->prevS);
+        }
+        else
+        {
+            free(hd->firstS);
+        }
+        hd->sizeH--;
+    }
     fclose (fp);
     return 1;
 }
@@ -335,6 +359,10 @@ Header* addResistor (Header* hd, int ser, int val, float pow, int amt)
                 }
                 else
                 {
+                    while (hd->firstS->firstR->prevR != NULL) // foi andando na lista de resistores para encontrar se tinha algum igual, se não tem, deve voltar
+                    {
+                        hd->firstS->firstR = hd->firstS->firstR->prevR;
+                    }
                     createResistor(hd, val, pow, amt); // dentro da função já ordena por valor
                     resistorCreated = 1; // criou
                 }
