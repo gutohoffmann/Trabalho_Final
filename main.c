@@ -43,11 +43,10 @@ int main(void)
 {
     Header* h = createHeader();
     loadFile(h);
-    printf("tamanho do cabecalho: %d\n", h->sizeH);
-    printf("primeira serie: %d\n", h->firstS->serie); // problema com ponteiro de serie
-    printf("primeiro res: %f\n", h->firstS->firstR->value);
-    printf("ultimo res: %f\n", h->lastS->lastR->value);
-    printf("primeiro res ultima serie: %f\n", h->lastS->firstR->value);
+    printf("teste");
+    addResistor(h, 3, 330, 2, 10);
+    printf("\nprimeira serie: %d", h->firstS->serie);
+    printf("\nsegunda serie: %d", h->firstS->nextS->serie);
     saveFile(h);
 
     return 0;
@@ -225,7 +224,7 @@ int loadFile(Header* hd)
 {
     int n;
     FILE *fp;
-    fp = fopen ("lista_de_resistores.txt", "r");
+    fp = fopen ("lista_de_resistores_desorganizada.txt", "r");
     if (fp == NULL)
     {
         printf ("Erro ao abrir o arquivo.\n");
@@ -240,38 +239,6 @@ int loadFile(Header* hd)
         n = fscanf(fp, "%d %f %f %d\n", &(auxS->serie), &(auxR->value), &(auxR->power), &(auxR->amount));
         if (n == EOF) break;
         addResistor(hd, auxS->serie, auxR->value, auxR->power, auxR->amount);
-        while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
-        {
-            hd->firstS->firstR = hd->firstS->firstR->prevR;
-        }
-        while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
-        {
-            hd->firstS->lastR = hd->firstS->lastR->nextR;
-        }
-        while (hd->firstS->prevS != NULL) // faz ponteiro ir para inicio
-        {
-            while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
-            {
-                hd->firstS->firstR = hd->firstS->firstR->prevR;
-            }
-            while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
-            {
-                hd->firstS->lastR = hd->firstS->lastR->nextR;
-            }
-            hd->firstS = hd->firstS->prevS;
-        }
-        while (hd->lastS->nextS != NULL) // faz ponteiro ir para final
-        {
-            while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
-            {
-                hd->firstS->firstR = hd->firstS->firstR->prevR;
-            }
-            while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
-            {
-                hd->firstS->lastR = hd->firstS->lastR->nextR;
-            }
-            hd->lastS = hd->lastS->nextS;
-        }
     }
     while(n != EOF);
     fclose (fp);
@@ -281,7 +248,7 @@ int loadFile(Header* hd)
 int saveFile(Header* hd)
 {
     FILE *fp;
-    fp = fopen ("lista_de_resistores2.txt", "w");
+    fp = fopen ("lista_de_resistores.txt", "w");
     if (fp == NULL)
     {
         printf ("Erro ao abrir o arquivo para escrever.\n");
@@ -296,11 +263,11 @@ int saveFile(Header* hd)
             if (hd->firstS->sizeS > 1)
             {
                 hd->firstS->firstR = hd->firstS->firstR->nextR; // vai para o próximo
-                free(hd->firstS->firstR->prevR); // libera o que foi impresso
+                //free(hd->firstS->firstR->prevR); // libera o que foi impresso
             }
             else
             {
-                free(hd->firstS->firstR);
+                //free(hd->firstS->firstR);
             }
             hd->firstS->sizeS--; // decrementa tamanho da serie
         }
@@ -308,11 +275,11 @@ int saveFile(Header* hd)
         if (hd->sizeH > 1)
         {
             hd->firstS = hd->firstS->nextS;
-            free(hd->firstS->prevS);
+            //free(hd->firstS->prevS);
         }
         else
         {
-            free(hd->firstS);
+            //free(hd->firstS);
         }
         hd->sizeH--;
     }
@@ -374,7 +341,39 @@ Header* addResistor (Header* hd, int ser, float val, float pow, int amt)
             }
         }
     }
-
+// organiza ponteiros
+    while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
+        {
+            hd->firstS->firstR = hd->firstS->firstR->prevR;
+        }
+        while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
+        {
+            hd->firstS->lastR = hd->firstS->lastR->nextR;
+        }
+        while (hd->firstS->prevS != NULL) // faz ponteiro ir para inicio
+        {
+            while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
+            {
+                hd->firstS->firstR = hd->firstS->firstR->prevR;
+            }
+            while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
+            {
+                hd->firstS->lastR = hd->firstS->lastR->nextR;
+            }
+            hd->firstS = hd->firstS->prevS;
+        }
+        while (hd->lastS->nextS != NULL) // faz ponteiro ir para final
+        {
+            while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
+            {
+                hd->firstS->firstR = hd->firstS->firstR->prevR;
+            }
+            while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
+            {
+                hd->firstS->lastR = hd->firstS->lastR->nextR;
+            }
+            hd->lastS = hd->lastS->nextS;
+        }
 
     return hd;
 }
