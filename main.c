@@ -35,18 +35,20 @@ Resistor* createResistor (Header* hd, float val, float pow, int amt);
 Serie* createSerieAndResistor (Header* hd, int ser, float val, float pow, int amt);
 Header* createHeader ();
 int loadFile(Header* hd);
-int saveFile(Header* hd);
+int saveFile(Header* hd); // também libera tudo
 Header* addResistor (Header* hd, int ser, float val, float pow, int amt);
+Header* removeResistor (Header* hd, int ser, float val, float pow);
+Header* searchResistor (Header* hd, int ser, float val, float pow);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(void)
 {
     Header* h = createHeader();
     loadFile(h);
-    printf("teste");
     addResistor(h, 3, 330, 2, 10);
-    printf("\nprimeira serie: %d", h->firstS->serie);
-    printf("\nsegunda serie: %d", h->firstS->nextS->serie);
+    removeResistor(h, 23, 1000, 0.25);
+    removeResistor(h, 24, 1000, 0.3);
+    removeResistor(h, 24, 1000, 0.25);
     saveFile(h);
 
     return 0;
@@ -263,11 +265,11 @@ int saveFile(Header* hd)
             if (hd->firstS->sizeS > 1)
             {
                 hd->firstS->firstR = hd->firstS->firstR->nextR; // vai para o próximo
-                //free(hd->firstS->firstR->prevR); // libera o que foi impresso
+                free(hd->firstS->firstR->prevR); // libera o que foi impresso
             }
             else
             {
-                //free(hd->firstS->firstR);
+                free(hd->firstS->firstR);
             }
             hd->firstS->sizeS--; // decrementa tamanho da serie
         }
@@ -275,14 +277,15 @@ int saveFile(Header* hd)
         if (hd->sizeH > 1)
         {
             hd->firstS = hd->firstS->nextS;
-            //free(hd->firstS->prevS);
+            free(hd->firstS->prevS);
         }
         else
         {
-            //free(hd->firstS);
+            free(hd->firstS);
         }
         hd->sizeH--;
     }
+    free(hd);
     fclose (fp);
     return 1;
 }
@@ -343,6 +346,16 @@ Header* addResistor (Header* hd, int ser, float val, float pow, int amt)
     }
 // organiza ponteiros
     while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
+    {
+        hd->firstS->firstR = hd->firstS->firstR->prevR;
+    }
+    while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
+    {
+        hd->firstS->lastR = hd->firstS->lastR->nextR;
+    }
+    while (hd->firstS->prevS != NULL) // faz ponteiro ir para inicio
+    {
+        while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
         {
             hd->firstS->firstR = hd->firstS->firstR->prevR;
         }
@@ -350,30 +363,151 @@ Header* addResistor (Header* hd, int ser, float val, float pow, int amt)
         {
             hd->firstS->lastR = hd->firstS->lastR->nextR;
         }
-        while (hd->firstS->prevS != NULL) // faz ponteiro ir para inicio
+        hd->firstS = hd->firstS->prevS;
+    }
+    while (hd->lastS->nextS != NULL) // faz ponteiro ir para final
+    {
+        while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
         {
-            while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
-            {
-                hd->firstS->firstR = hd->firstS->firstR->prevR;
-            }
-            while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
-            {
-                hd->firstS->lastR = hd->firstS->lastR->nextR;
-            }
-            hd->firstS = hd->firstS->prevS;
+            hd->firstS->firstR = hd->firstS->firstR->prevR;
         }
-        while (hd->lastS->nextS != NULL) // faz ponteiro ir para final
+        while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
         {
-            while (hd->firstS->firstR->prevR != NULL) // faz ponteiro ir para começo
-            {
-                hd->firstS->firstR = hd->firstS->firstR->prevR;
-            }
-            while (hd->firstS->lastR->nextR != NULL) // faz ponteiro ir para final
-            {
-                hd->firstS->lastR = hd->firstS->lastR->nextR;
-            }
-            hd->lastS = hd->lastS->nextS;
+            hd->firstS->lastR = hd->firstS->lastR->nextR;
         }
+        hd->lastS = hd->lastS->nextS;
+    }
 
+    return hd;
+}
+
+
+Header* removeResistor (Header* hd, int ser, float val, float pow)
+{
+    while (hd->firstS->serie != ser) // enquanto a série for diferente
+    {
+        if (hd->firstS->nextS == NULL) // se o proximo é nulo, não tem mais pra consultar
+        {
+            printf("\nResistor inexistente.\n");
+            while (hd->firstS->prevS != NULL)
+            {
+                hd->firstS = hd->firstS->prevS;
+            }
+            return hd;
+        }
+        else
+        {
+            hd->firstS = hd->firstS->nextS; // anda uma série
+        }
+    }
+    // se chegar aqui, achou a série
+
+    while (hd->firstS->firstR->value != val || hd->firstS->firstR->power != pow) // achou a serie, mas valor epotencia não batem
+    {
+        if (hd->firstS->firstR->nextR == NULL) // se o proximo é nulo, não tem mais o que consultar
+        {
+            printf("\nResistor não encontrado.\n");
+            while (hd->firstS->firstR->prevR != NULL)
+            {
+                hd->firstS->firstR = hd->firstS->firstR->prevR;
+            }
+            while (hd->firstS->prevS != NULL)
+            {
+                hd->firstS = hd->firstS->prevS;
+            }
+            return hd;
+        }
+        else
+        {
+            hd->firstS->firstR = hd->firstS->firstR->nextR;
+        }
+    }
+
+    // se chegou aqui, encontrou pra remover
+    if (hd->firstS->sizeS > 1)
+    {
+        if (hd->firstS->firstR->prevR != NULL) // se não estã no começo
+        {
+            if (hd->firstS->firstR->nextR != NULL) // se não está no final
+            {
+                hd->firstS->firstR->prevR->nextR = hd->firstS->firstR->nextR;
+                hd->firstS->firstR->nextR->prevR = hd->firstS->firstR->prevR;
+                free(hd->firstS->firstR);
+                hd->firstS->firstR = hd->firstS->lastR;
+                while (hd->firstS->firstR->prevR != NULL)
+                {
+                    hd->firstS->firstR = hd->firstS->firstR->prevR;
+                }
+                hd->firstS->sizeS--;
+                while (hd->firstS->prevS != NULL)
+                {
+                    hd->firstS = hd->firstS->prevS;
+                }
+                return hd; // removeu do meio
+            }
+            // se chegou aqui, está no final
+            while (hd->firstS->firstR->prevR != NULL)
+            {
+                hd->firstS->firstR = hd->firstS->firstR->prevR;
+            }
+            hd->firstS->lastR = hd->firstS->lastR->prevR;
+            free(hd->firstS->lastR->nextR);
+            hd->firstS->lastR->nextR = NULL;
+            hd->firstS->sizeS--;
+            while (hd->firstS->prevS != NULL)
+            {
+                hd->firstS = hd->firstS->prevS;
+            }
+            return hd;
+        }
+        // se chegou aqui, está no começo
+        hd->firstS->firstR = hd->firstS->firstR->nextR;
+        free(hd->firstS->firstR->prevR);
+        hd->firstS->firstR->prevR = NULL;
+        return hd;
+    }
+    else if (hd->firstS->sizeS == 1)
+    {
+        free(hd->firstS->firstR);
+        if (hd->sizeH > 1)
+        {
+            if (hd->firstS->prevS != NULL) // se não estã no começo
+            {
+                if (hd->firstS->nextS != NULL) // se não está no final
+                {
+                    hd->firstS->prevS->nextS = hd->firstS->nextS;
+                    hd->firstS->nextS->prevS = hd->firstS->prevS;
+                    free(hd->firstS);
+                    hd->firstS = hd->lastS;
+                    while (hd->firstS->prevS != NULL)
+                    {
+                        hd->firstS = hd->firstS->prevS;
+                    }
+                    hd->sizeH--;
+                    return hd; // removeu do meio
+                }
+                // se chegou aqui, está no final
+                while (hd->firstS->prevS != NULL)
+                {
+                    hd->firstS = hd->firstS->prevS;
+                }
+                hd->firstS = hd->firstS->prevS;
+                free(hd->firstS->nextS);
+                hd->firstS->nextS = NULL;
+                hd->sizeH--;
+                return hd;
+            }
+            // se chegou aqui, está no começo
+            hd->firstS = hd->firstS->nextS;
+            free(hd->firstS->prevS);
+            hd->firstS->prevS = NULL;
+            return hd;
+        }
+        else if (hd->sizeH == 1)
+        {
+            free (hd->firstS);
+            //free(hd);
+        }
+    }
     return hd;
 }
