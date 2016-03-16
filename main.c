@@ -35,6 +35,7 @@ Resistor* createResistor (Header* hd, int val, float pow, int amt);
 Serie* createSerieAndResistor (Header* hd,int ser, int val, float pow, int amt);
 Header* createHeader ();
 int loadFile(Header* hd);
+int saveFile(Header* hd);
 Header* addResistor (Header* hd,int ser, int val, float pow, int amt);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -43,8 +44,11 @@ int main(void)
     Header* h = createHeader();
     loadFile(h);
     printf("tamanho do cabecalho: %d\n", h->sizeH);
+    printf("primeira serie: %d\n", h->firstS->serie); // problema com ponteiro de serie
     printf("primeiro res: %d\n", h->firstS->firstR->value);
     printf("ultimo res: %d\n", h->lastS->lastR->value);
+    printf("primeiro res ultima serie: %d\n", h->lastS->firstR->value);
+    //saveFile(h);
 
     return 0;
 }
@@ -97,6 +101,10 @@ Resistor* createResistor (Header* hd, int val, float pow, int amt)
             r->prevR = NULL;
             hd->firstS->firstR->prevR = r;
             hd->firstS->firstR = r;
+            while (hd->firstS->firstR->prevR != NULL)
+                {
+                    hd->firstS->firstR = hd->firstS->firstR->prevR; // coloca o ponteiro hd->firstS->firstR no começo
+                }
             resistorCreated = 1;
         }
         //if (resistorCreated == 1) break; // sai do else se já criou resistor
@@ -173,6 +181,10 @@ Serie* createSerieAndResistor (Header* hd, int ser, int val, float pow, int amt)
             hd->firstS->prevS = s;
             hd->firstS = s;
             createResistor(hd, val, pow, amt);
+            while (hd->firstS->prevS != NULL)
+                {
+                    hd->firstS = hd->firstS->prevS; // coloca o ponteiro hd->firstS no começo
+                }
             serieCreated = 1;
         }
         //if (resistorCreated == 1) break; // sai do else se já criou resistor
@@ -226,21 +238,70 @@ int loadFile(Header* hd)
     do
     {
         n = fscanf(fp, "%d %d %f %d\n", &(auxS->serie), &(auxR->value), &(auxR->power), &(auxR->amount));
-        addResistor(hd, auxS->serie, auxR->value, auxR->power, auxR->amount);
         if (n == EOF) break;
+        addResistor(hd, auxS->serie, auxR->value, auxR->power, auxR->amount);
+        while (hd->firstS->prevS != NULL)
+        {
+            while (hd->firstS->firstR->prevR != NULL)
+            {
+                hd->firstS->firstR = hd->firstS->firstR->prevR;
+            }
+            hd->firstS = hd->firstS->prevS;
+        }
     }
     while(n != EOF);
     fclose (fp);
     return 1;
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int saveFile(Header* hd)
+{
+    FILE *fp;
+    fp = fopen ("lista_de_resistores2.txt", "w");
+    if (fp == NULL)
+    {
+        printf ("Erro ao abrir o arquivo para escrever.\n");
+        return 0;
+    }
+
+        while (hd->sizeH > 0)
+        {
+            while (hd->firstS->sizeS > 0)
+            {
+                fprintf(fp, "%d %d %f %d\n", hd->firstS->serie, hd->firstS->firstR->value, hd->firstS->firstR->power, hd->firstS->firstR->amount);
+                if (hd->firstS->sizeS > 1)
+                {
+                    hd->firstS->firstR = hd->firstS->firstR->nextR; // vai para o próximo
+                    free(hd->firstS->firstR->prevR); // libera o que foi impresso
+                }
+                else
+                {
+                    free(hd->firstS->firstR);
+                }
+                hd->firstS->sizeS--; // decrementa tamanho da serie
+            }
+            // chegou aqui apagou uma série e todos seus resistores
+            if (hd->sizeH > 1)
+            {
+                hd->firstS = hd->firstS->nextS;
+                free(hd->firstS->prevS);
+            }
+            else
+            {
+                free(hd->firstS);
+            }
+            hd->sizeH--;
+        }
+    fclose (fp);
+    return 1;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Header* addResistor (Header* hd, int ser, int val, float pow, int amt)
 {
+    //Resistor* auxR;
     int serieAndResistorCreated = 0; // flag
     int resistorCreated = 0; // flag
-
-    serieAndResistorCreated = 0;
-    resistorCreated = 0;
 
     if (hd->sizeH == 0)
     {
